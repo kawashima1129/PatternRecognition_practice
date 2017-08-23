@@ -85,7 +85,7 @@ def draw_prob(df_data, weight_vector):
     ax3.set_title('plot colored by probability', size=16)
 
 if __name__ == "__main__":
-    N = 500g
+    N = 500
     df_data = data_make(N, draw_plot=True)
 
     weight_vector = np.random.rand(3)
