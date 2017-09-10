@@ -55,10 +55,10 @@ if __name__=='__main__':
     df_data['y'] = df_data.apply(lambda r: -1 if(r.y == 0) else 1, axis = 1)
     
     weight_vector = np.random.rand(3)
-    print("パラメーラ更新前:{}".format(weight_vector))
+    print("パラメータ更新前:{}".format(weight_vector))
     
     weight_vector = estimate_weight(df_data, weight_vector)
-    print("パラメーラ更新後:{}".format(weight_vector)) 
+    print("パラメータ更新後:{}".format(weight_vector))
     drawline(weight_vector)
     
     
