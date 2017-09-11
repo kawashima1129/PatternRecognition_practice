@@ -6,12 +6,15 @@ Created on Fri Sep  1 12:48:11 2017
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import seaborn as sns
 from sklearn.datasets import load_iris
 from pandas import DataFrame, Series
 import pandas as pd
 
+"""
+fig = plt.figure(figsize = (12, 4))
+ax1 = plt.subplot2grid((1,2), (0,0))
+ax2 = plt.subplot2grid((1,2), (0,1))
+"""
 
 
 class GaussianMixture(object):
@@ -23,26 +26,28 @@ class GaussianMixture(object):
         
         self.p = np.ones(self.K) / self.K
         self.mu = np.random.uniform(X.min(), X.max(), (self.ndim, self.K))
-        self.covs = np.repeat(10 * np.eye(self.ndim), self.K).reshape(self.ndim, self.ndim, self.K)
-    
-    def fit(self, X):
-        # EM algorithm
-
-        for i in range(10):
-            burden_rates = self.e_step(X)
-            self.m_step(X, burden_rates)
-
+        self.covs = np.repeat(X.std(axis = 0).mean() * np.eye(self.ndim), self.K).reshape(self.ndim, self.ndim, self.K)
         
+    def fit(self, X, max_iter = 100):
+        # EM algorithm
+        for i in range(max_iter):
+            params = np.hstack((self.p.ravel(), self.mu.ravel(), self.covs.ravel()))
+            burden_rates = self.e_step(X)#Eステップ
+            self.m_step(X, burden_rates)#Mステップ
+            print('iter:{}'.format(i))
+            
+            #パラメータが変わらなくなったらループを抜ける
+            if np.allclose(params, np.hstack((self.p.ravel(), self.mu.ravel(), self.covs.ravel()))):
+                break
+          
     def gaussian(self, x, k):
         
-        x_mu = (x - self.mu[:,k]).reshape(2,1)
+        x_mu = (x - self.mu[:,k]).reshape(self.ndim, 1)
         p1 =  ( (2 * np.pi) ** (1 / self.ndim) ) * ( np.linalg.det(self.covs[:,:,k]) ** 0.5)  
         p2 = -0.5 * (x_mu).T.dot( np.linalg.inv(self.covs[:,:,k]) ) .dot( x_mu ) 
         p = np.exp(p2) / p1
         
         return p
-
-
     
     def e_step(self, X):
         n = np.zeros((len(X),self.K))
@@ -75,14 +80,9 @@ class GaussianMixture(object):
             sigma = np.zeros((self.ndim,self.ndim))
             for i in range(len(X)):
                 x_mu = (X[i, :] - self.mu[:,k])
-                x_mu = x_mu.reshape(2,1)
+                x_mu = x_mu.reshape(self.ndim, 1)
                 sigma += burden_rates[i,k] * x_mu.dot(x_mu.T ) 
             self.covs[:,:,k] = ( sigma / Nk[k])
-
-
-        print(self.mu)
-        print(self.p)
-        print(self.covs.T)
 
 
 def create_toy_data():
@@ -92,8 +92,8 @@ def create_toy_data():
     x2 += np.array([5, -5])
     x3 = np.random.normal(size=(100, 2))
     x3 += np.array([0, 5])
+    
     return np.vstack((x1, x2, x3))
-
 
 
 if __name__ == '__main__':    
@@ -105,11 +105,13 @@ if __name__ == '__main__':
     s = df.std()
     df = df.sub(m).div(s)
     df['y'] = DataFrame(iris.target)
-    input_dim = len(df.columns) - 1 #入力次元数
-
-    X = create_toy_data()
+    
+    #ax1.scatter(x = df[0], y = df[1], c = df.y, alpha = 0.5)
+    
+    
+    X =np.array(df[[0,1]])
+    #X = create_toy_data()
+    input_dim = np.size(X,1) #入力次元数              
     gs = GaussianMixture(K, input_dim, X)
     gs.fit(X)
- 
-    
-
+    print("predict:\n u={0}, \nsigma={1}, \npi={2}".format(gs.mu, gs.covs.T, gs.p)) 
