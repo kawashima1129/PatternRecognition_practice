@@ -10,12 +10,6 @@ from sklearn.datasets import load_iris
 from pandas import DataFrame, Series
 import pandas as pd
 
-"""
-fig = plt.figure(figsize = (12, 4))
-ax1 = plt.subplot2grid((1,2), (0,0))
-ax2 = plt.subplot2grid((1,2), (0,1))
-"""
-
 
 class GaussianMixture(object):
     def __init__(self, K, input_dim, X):
@@ -34,7 +28,7 @@ class GaussianMixture(object):
             params = np.hstack((self.p.ravel(), self.mu.ravel(), self.covs.ravel()))
             burden_rates = self.e_step(X)#Eステップ
             self.m_step(X, burden_rates)#Mステップ
-            print('iter:{}'.format(i))
+            #print('iter:{}'.format(i))
             
             #パラメータが変わらなくなったらループを抜ける
             if np.allclose(params, np.hstack((self.p.ravel(), self.mu.ravel(), self.covs.ravel()))):
@@ -83,7 +77,13 @@ class GaussianMixture(object):
                 x_mu = x_mu.reshape(self.ndim, 1)
                 sigma += burden_rates[i,k] * x_mu.dot(x_mu.T ) 
             self.covs[:,:,k] = ( sigma / Nk[k])
+    
+    def classify(self, X):
+        labels = np.array([np.array([ self.p[k] * self.gaussian(X[i,:], k) for k in range(self.K)]).argmax() 
+                            for i in range(len(X))] )     
+        return labels
 
+        
 
 def create_toy_data():
     x1 = np.random.normal(size=(100, 2))
@@ -106,12 +106,13 @@ if __name__ == '__main__':
     df = df.sub(m).div(s)
     df['y'] = DataFrame(iris.target)
     
-    #ax1.scatter(x = df[0], y = df[1], c = df.y, alpha = 0.5)
-    
-    
-    X =np.array(df[[0,1]])
-    #X = create_toy_data()
+    #X =np.array(df[[0,1]])
+    X = create_toy_data()
     input_dim = np.size(X,1) #入力次元数              
     gs = GaussianMixture(K, input_dim, X)
     gs.fit(X)
     print("predict:\n u={0}, \nsigma={1}, \npi={2}".format(gs.mu, gs.covs.T, gs.p)) 
+    labels = gs.classify(X)
+    
+    colors = ['red', 'blue', 'green']
+    plt.scatter(X[:,0], X[:,1], c = [colors[int(label)] for label in labels])
