@@ -82,7 +82,11 @@ class GaussianMixture(object):
         labels = np.array([np.array([ self.p[k] * self.gaussian(X[i,:], k) for k in range(self.K)]).argmax() 
                             for i in range(len(X))] )     
         return labels
-
+    
+    def predict_prob(self, X):
+        labels = np.array([np.array([ self.p[k] * self.gaussian(X[i,:], k) for k in range(self.K)]).sum() 
+                            for i in range(len(X))] )     
+        return labels
         
 
 def create_toy_data():
@@ -112,7 +116,14 @@ if __name__ == '__main__':
     gs = GaussianMixture(K, input_dim, X)
     gs.fit(X)
     print("predict:\n u={0}, \nsigma={1}, \npi={2}".format(gs.mu, gs.covs.T, gs.p)) 
-    labels = gs.classify(X)
     
+    labels1 = gs.classify(X) 
     colors = ['red', 'blue', 'green']
-    plt.scatter(X[:,0], X[:,1], c = [colors[int(label)] for label in labels])
+    plt.scatter(X[:,0], X[:,1], c = [colors[int(label)] for label in labels1])
+    
+    x_test, y_test = np.meshgrid(np.linspace( X[:,0].min(), X[:,0].max(), 100),
+                                 np.linspace( X[:,0].min(), X[:,0].max(), 100)) 
+    lebels2 = gs.predict_prob(np.c_[x_test.ravel(), y_test.ravel()])
+    probs = lebels2.reshape(100, 100)
+    plt.contour(x_test, y_test, probs)
+    
